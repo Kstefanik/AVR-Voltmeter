@@ -14,20 +14,18 @@
 
 int decPoint;
 
-
-
-void float_to_int_array(float voltage_reading, int *voltage, int *size) {
+void float_to_int_array(float voltage, int *voltage_array, int *size) {
     char str[10];
     int i, j = 0;
 
     // Convert float to string
-    sprintf(str, "%.2f", voltage_reading);
+    sprintf(str, "%.2f", voltage);
 
     // Iterate over each character in the string
     for(i = 0; str[i] != '\0'; i++) {
         // If the character is a digit, convert it to an integer and add it to the array
         if(str[i] >= '0' && str[i] <= '9') {
-            voltage[j] = str[i] - '0';
+            voltage_array[j] = str[i] - '0';
             j++;
         }
 
@@ -39,60 +37,60 @@ void float_to_int_array(float voltage_reading, int *voltage, int *size) {
     *size = j;
 }
 
-void int_array_to_hex(int *voltage, int size){
-
+void int_array_to_hex(int *voltage_array, int size){
+    
     if (decPoint == 1){             //  If there is only 1 digit before decimal, 
-        voltage[3] = voltage[2];    //  point, shift all digits to the right and add 0 at the start
-        voltage[2] = voltage[1];    //  example 9.80 -> 09.80
-        voltage[1] = voltage[0];
-        voltage[0] = 0;
+        voltage_array[3] = voltage_array[2];    //  point, shift all digits to the right and add 0 at the start
+        voltage_array[2] = voltage_array[1];    //  example 9.80 -> 09.80
+        voltage_array[1] = voltage_array[0];
+        voltage_array[0] = 0;
     }
 
     for(int i = 0; i < size; ++i){  //convets digits to the equivalent hexadecimal values
                                     //(specified in display documentation)
-        if (voltage[i] == 0){
-            voltage[i] = 0x7E;          
+        if (voltage_array[i] == 0){
+            voltage_array[i] = 0x7E;          
         }
         
-        else if (voltage[i] == 1){
-            voltage[i] = 0x30;
+        else if (voltage_array[i] == 1){
+            voltage_array[i] = 0x30;
         }
 
-        else if (voltage[i] == 2){
-            voltage[i] = 0x6D;
+        else if (voltage_array[i] == 2){
+            voltage_array[i] = 0x6D;
         }
 
-        else if (voltage[i] == 3){
-            voltage[i] = 0x79;
+        else if (voltage_array[i] == 3){
+            voltage_array[i] = 0x79;
         }
 
-        else if (voltage[i] == 4){
-            voltage[i] = 0x33;
+        else if (voltage_array[i] == 4){
+            voltage_array[i] = 0x33;
         }
 
-        else if (voltage[i] == 5){
-            voltage[i] = 0x5B;
+        else if (voltage_array[i] == 5){
+            voltage_array[i] = 0x5B;
         }
 
-        else if (voltage[i] == 6){
-            voltage[i] = 0x5F;
+        else if (voltage_array[i] == 6){
+            voltage_array[i] = 0x5F;
         }
 
-        else if (voltage[i] == 7){
-            voltage[i] = 0x70;
+        else if (voltage_array[i] == 7){
+            voltage_array[i] = 0x70;
         }
 
-        else if (voltage[i] == 8){
-            voltage[i] = 0x7F;
+        else if (voltage_array[i] == 8){
+            voltage_array[i] = 0x7F;
         }
 
-        else if (voltage[i] == 9){
-            voltage[i] = 0x7B;
+        else if (voltage_array[i] == 9){
+            voltage_array[i] = 0x7B;
         }
     }
 }
 
-void write(int *voltage){
+void write(int *voltage_array){
     
     DISP_SELECTION_DIR = 0b00001111;
     DISPLAY_DIR = 0xff;
@@ -100,55 +98,63 @@ void write(int *voltage){
     for(int i = 0; i < 20; i++){
 
         DISP_SELECTION_PORT = ~0b00000001;
-        DISPLAY_PORT = ~voltage[0];
+        DISPLAY_PORT = ~voltage_array[0];
         DISPLAY_PORT |= (1<<DEC_POINT_PORT);
         _delay_ms(5);
 
         DISP_SELECTION_PORT = ~0b00000010;
-        DISPLAY_PORT = ~voltage[1];
+        DISPLAY_PORT = ~voltage_array[1];
         DISPLAY_PORT &= ~(1<<DEC_POINT_PORT);
         _delay_ms(5);
         
         DISP_SELECTION_PORT = ~0b00000100;
-        DISPLAY_PORT = ~voltage[2];
+        DISPLAY_PORT = ~voltage_array[2];
         DISPLAY_PORT |= (1<<DEC_POINT_PORT);
         _delay_ms(5);
 
         DISP_SELECTION_PORT = ~0b00001000;
-        DISPLAY_PORT = ~voltage[3];
+        DISPLAY_PORT = ~voltage_array[3];
         DISPLAY_PORT |= (1<<DEC_POINT_PORT);
         _delay_ms(5);
-        
-        
     }
     
 }
 
-void display(float voltage_reading){
+void display(float voltage){
     
-    int voltage[4];
+    int voltage_array[4];
     int size;
-    float_to_int_array(voltage_reading, voltage, &size);
-    int_array_to_hex(voltage, 4);
-    write(voltage);
+    float_to_int_array(voltage, voltage_array, &size);
+    int_array_to_hex(voltage_array, 4);
+    write(voltage_array);
 }
 
-void ADC_init(void)
-{
+void ADC_init(void){
+
    ADMUX |= (1 << REFS0) | (1 << MUX0);   //AVCC equal to VCC and ADC1 input
    ADCSRA |= (1 << ADEN) | (1 << ADSC) | (1 << ADATE) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
 }
 
-int main(void){
+float read_voltage(float R1, float R2, float Vref){
+    // R1 and R2 form a voltage divider.
+    // R1 is the smaller one!!!!!!!!!!!!!!!
+    // Enter their values in the same order of magnitude
+    // Vref is the reference voltage in volts
 
-    float voltage_reading;
+    float voltage = (((float)ADC) * Vref / 1024.0) * (R1 + R2) / R1;
+
+    return voltage;
+}
+
+int main(void){
+    float voltage;
     
     ADC_init();
     _delay_ms(10);
     
     while(1){
-        voltage_reading = (((float)ADC)*5.0/1024.0)*12.2/2.2;
-        display(voltage_reading);
+        voltage = read_voltage(2.2, 10.0, 5.0);
+        display(voltage);
     }
     
 }

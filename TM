@@ -1,1 +1,1 @@
-funkcja odczyt anpięcia, słownik, nie modyfikować zmiennej, słownik, historia pomiarów
+słownik, nie modyfikować zmiennej, słownik, historia pomiarów
