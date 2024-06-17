@@ -11,7 +11,6 @@
 #include <avr/io.h>
 #include<util/delay.h>
 #include <stdio.h>
-#include <glib.h>
 
 int decPoint;
 
@@ -47,9 +46,10 @@ void int_array_to_hex(int *voltage_array, int size){
         voltage_array[0] = 0;
     }
 
-    for(int i = 0; i < size; ++i){          
-        switch (voltage_array[i]){         //convets digits to the equivalent hexadecimal values                                      
-            case 0:                        //(specified in display documentation)
+    for(int i = 0; i < size; ++i){
+
+        switch (voltage_array[i]) {
+            case 0:
                 voltage_array[i] = 0x7E;
             break;
 
@@ -149,7 +149,6 @@ float read_voltage(float R1, float R2, float Vref){
 }
 
 int main(void){
-    
     float voltage;
     
     ADC_init();
@@ -158,5 +157,6 @@ int main(void){
     while(1){
         voltage = read_voltage(2.2, 10.0, 5.0);
         display(voltage);
-    }  
+    }
+    
 }
